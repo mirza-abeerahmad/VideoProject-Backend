@@ -8,17 +8,18 @@ dotenv.config({ path: "./.env" });
 const app = express();
 
 // CORS Configuration
+const normalizeOrigin = (origin) => origin.trim().replace(/\/+$/, "");
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:3000",
   "https://streamly-omega-three.vercel.app",
-  ...(process.env.CORS_ORIGIN || "").split(",").map((origin) => origin.trim()).filter(Boolean),
-];
+  ...(process.env.CORS_ORIGIN || "").split(",").map(normalizeOrigin).filter(Boolean),
+].map(normalizeOrigin);
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin || allowedOrigins.includes(normalizeOrigin(origin))) {
         return callback(null, true);
       }
 
