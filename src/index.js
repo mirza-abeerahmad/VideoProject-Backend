@@ -11,19 +11,20 @@ dotenv.config({
 
 connectDB()
 .then(() => {
-    app.listen(process.env.PORT || 8000, () => {
-        console.log(`Server is running on port : ${process.env.PORT}`);
+  const port = process.env.PORT || 8000;
+  app.listen(port, () => {
+    console.log(`[SERVER] Streamly API running on port ${port}`);
+    console.log(`[SERVER] Healthcheck: /api/v1/healthcheck`);
     })
     app.on("error", (error) => {
-        console.log("Error not data base connected", error);
+    console.error("[SERVER] Application error:", error);
         throw error
       })
 })
 .catch((err) => {
-    console.log("Mongo DB connection failed", err);
+  console.error("[SERVER] Startup failed:", err);
     
 })
-
 
 
 

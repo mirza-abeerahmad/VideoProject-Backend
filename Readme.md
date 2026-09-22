@@ -25,6 +25,12 @@ CLOUDINARY_API_SECRET=your-api-secret
 CORS_ORIGIN=http://localhost:5173
 ```
 
+For multiple frontend origins, separate values with commas:
+
+```env
+CORS_ORIGIN=http://localhost:5173,http://localhost:3000,https://streamly-omega-three.vercel.app
+```
+
 Install and run the backend:
 
 ```bash
@@ -32,7 +38,7 @@ npm install
 npm run dev
 ```
 
-The API is available at `http://localhost:8000/api/v1`. The health endpoint is `GET /healthcheck`.
+The API is available at `http://localhost:3000/api/v1` when `PORT=3000`. The health endpoint is `GET /api/v1/healthcheck` and reports API and MongoDB status.
 
 ## Frontend setup
 
@@ -42,7 +48,13 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:5173`. Vite proxies `/api` requests to the backend. Use the app to register, sign in, browse videos, search, publish media, comment, like, follow creators, and manage creator workflows.
+Open `http://localhost:5173`. The frontend uses Axios with `VITE_API_URL` when provided. Otherwise it uses `http://localhost:3000/api/v1` in development and `https://streamlybackend-nu.vercel.app/api/v1` in production.
+
+```env
+VITE_API_URL=http://localhost:3000/api/v1
+```
+
+Use the app to register, sign in, browse videos, search, publish media, comment, like, follow creators, and manage creator workflows.
 
 ## API groups
 

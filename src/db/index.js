@@ -32,11 +32,12 @@ const cleanupLegacyLikeIndexes = async () => {
 
 const connectDB = async () => {
     try {
+        console.log("[DB] Connecting to MongoDB...");
         const connectionInstance = await mongoose.connect(`${process.env.MONGODB_URI}/${DB_NAME}`);
         await cleanupLegacyLikeIndexes();
-        console.log(`\n MongoDB connected !! DB HOST: ${connectionInstance.connection.host}`);
+        console.log(`[DB] MongoDB connected | host: ${connectionInstance.connection.host} | database: ${connectionInstance.connection.name}`);
     } catch (error) {
-        console.log("MONGODB connection FAILED ", error);
+        console.error("[DB] MongoDB connection failed:", error.message || error);
         process.exit(1);
     }
 };
