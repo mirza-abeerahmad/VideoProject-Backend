@@ -45,6 +45,15 @@ app.use((req, res, next) => {
   next();
 });
 
+app.get("/", (_req, res) => {
+  res.status(200).json({
+    status: "ok",
+    api: "running",
+    message: "Streamly backend is running",
+    healthcheck: "/api/v1/healthcheck",
+  });
+});
+
 // Route imports
 import userRouter from "./routes/user.route.js";
 import videoRouter from "./routes/video.routes.js";
