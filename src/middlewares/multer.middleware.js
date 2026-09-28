@@ -1,8 +1,9 @@
 import fs from "fs";
+import os from "os";
 import path from "path";
 import multer from "multer";
 
-const tempDir = path.resolve("public", "temp");
+const tempDir = path.join(os.tmpdir(), "streamly-uploads");
 fs.mkdirSync(tempDir, { recursive: true });
 
 const storage = multer.diskStorage({
@@ -10,7 +11,8 @@ const storage = multer.diskStorage({
     cb(null, tempDir);
   },
   filename: function (req, file, cb) {
-    const safeName = `${Date.now()}-${file.originalname.replace(/\s+/g, "_")}`;
+    const originalName = path.basename(file.originalname).replace(/[^a-zA-Z0-9._-]/g, "_");
+    const safeName = `${Date.now()}-${originalName}`;
     cb(null, safeName);
   },
 });
