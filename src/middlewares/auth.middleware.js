@@ -27,6 +27,24 @@ export const verifyJWT = asyncHandler(async (req, _, next) => {
   }
 });
 
+export const optionalJWT = asyncHandler(async (req, _res, next) => {
+  const token =
+    req.cookies?.accessToken ||
+    req.header("Authorization")?.replace("Bearer ", "");
+
+  if (!token) return next();
+
+  let decodedToken;
+  try {
+    decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+  } catch {
+    return next();
+  }
+
+  req.user = await User.findById(decodedToken?._id).select("-password -refreshToken");
+  next();
+});
+
 export const authorizeRoles = (...allowedRoles) =>
   asyncHandler(async (req, _res, next) => {
     if (!req.user) {

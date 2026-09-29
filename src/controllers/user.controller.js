@@ -268,8 +268,8 @@ const getCurrentUser = asyncHandler(async(req, res) => {
     .status(200)
     .json(new ApiResponse(
         200,
-        req.user,
-        "User fetched successfully"
+            req.user || null,
+            req.user ? "User fetched successfully" : "No active session"
     ))
 })
 
