@@ -168,17 +168,27 @@ const loginUser = asyncHandler(async (req, res) =>{
 })
 
 const logoutUser = asyncHandler(async(req, res) => {
-    await User.findByIdAndUpdate(
-        req.user._id,
-        {
-            $unset: {
-                refreshToken: 1 // this removes the field from document
+    const incomingRefreshToken = req.cookies?.refreshToken
+    let userId = req.user?._id
+
+    if (userId) {
+        const filter = { _id: userId }
+        if (incomingRefreshToken) filter.refreshToken = incomingRefreshToken
+        await User.findOneAndUpdate(filter, { $unset: { refreshToken: 1 } })
+    } else if (incomingRefreshToken) {
+        try {
+            const decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET)
+            userId = decodedToken?._id
+            if (userId) {
+                await User.findOneAndUpdate(
+                    { _id: userId, refreshToken: incomingRefreshToken },
+                    { $unset: { refreshToken: 1 } }
+                )
             }
-        },
-        {
-            new: true
+        } catch {
+            // Invalid or expired refresh tokens still get cleared from the browser.
         }
-    )
+    }
 
     const options = {
         httpOnly: true,
