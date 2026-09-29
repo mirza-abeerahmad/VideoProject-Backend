@@ -13,13 +13,23 @@ const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:3000",
   "https://streamly-omega-three.vercel.app",
-  ...(process.env.CORS_ORIGIN || "").split(",").map(normalizeOrigin).filter(Boolean),
+  ...(process.env.CORS_ORIGIN || "")
+    .split(",")
+    .map(normalizeOrigin)
+    .filter(Boolean),
 ].map(normalizeOrigin);
+const isLocalDevelopmentOrigin = (origin) =>
+  /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin);
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(normalizeOrigin(origin))) {
+      const normalizedOrigin = origin ? normalizeOrigin(origin) : "";
+      if (
+        !origin ||
+        allowedOrigins.includes(normalizedOrigin) ||
+        isLocalDevelopmentOrigin(normalizedOrigin)
+      ) {
         return callback(null, true);
       }
 
@@ -39,7 +49,9 @@ app.use((req, res, next) => {
   console.log(`[API] ${req.method} ${req.originalUrl}`);
 
   res.on("finish", () => {
-    console.log(`[API] ${req.method} ${req.originalUrl} -> ${res.statusCode} (${Date.now() - startedAt}ms)`);
+    console.log(
+      `[API] ${req.method} ${req.originalUrl} -> ${res.statusCode} (${Date.now() - startedAt}ms)`
+    );
   });
 
   next();
@@ -93,7 +105,7 @@ app.use((error, _req, res, _next) => {
 export { app };
 
 // import express from "express"
-// import cors from "cors" 
+// import cors from "cors"
 // import cookirParser from "cookie-parser" // Cookies ko access karna, aur CRUD Operation perform karna
 // import dotenv from "dotenv"
 
@@ -113,7 +125,7 @@ export { app };
 
 // app.use(cookirParser())
 
-// //route import 
+// //route import
 // import userRouter from './routes/user.route.js'
 // import videoRouter from './routes/video.routes.js'
 // import commentRouter from './routes/comment.routes.js'
