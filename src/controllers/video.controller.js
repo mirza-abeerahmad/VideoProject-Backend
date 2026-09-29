@@ -1,3 +1,4 @@
+import { v2 as cloudinary } from "cloudinary"
 import mongoose, {isValidObjectId} from "mongoose"
 import {Video} from "../models/video.model.js"
 import {User} from "../models/user.model.js"
@@ -62,15 +63,40 @@ const getAllVideos = asyncHandler(async (req, res) => {
 })
 
 const publishAVideo = asyncHandler(async (req, res) => {
-    const { title, description} = req.body
+    const { title, description, videoUrl, thumbnailUrl, duration } = req.body
     if (!title?.trim() || !description?.trim()) throw new ApiError(400, "Title and description are required")
-    const videoPath = req.files?.videoFile?.[0]?.path
-    const thumbnailPath = req.files?.thumbnail?.[0]?.path
-    if (!videoPath || !thumbnailPath) throw new ApiError(400, "Video and thumbnail files are required")
-    const [videoFile, thumbnail] = await Promise.all([uploadOnCloudinary(videoPath), uploadOnCloudinary(thumbnailPath)])
-    if (!videoFile || !thumbnail) throw new ApiError(500, "Unable to upload media")
-    const video = await Video.create({ title: title.trim(), description: description.trim(), videoFile: videoFile.url, thumbnail: thumbnail.url, duration: Number(videoFile.duration) || 0, owner: req.user._id })
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME
+    const isCloudinaryAsset = (assetUrl, resourceType) => {
+        try {
+            const parsedUrl = new URL(assetUrl)
+            return parsedUrl.protocol === "https:" && parsedUrl.hostname === "res.cloudinary.com" && parsedUrl.pathname.startsWith(`/${cloudName}/${resourceType}/upload/`)
+        } catch {
+            return false
+        }
+    }
+    if (!isCloudinaryAsset(videoUrl, "video") || !isCloudinaryAsset(thumbnailUrl, "image")) {
+        throw new ApiError(400, "Valid uploaded video and thumbnail URLs are required")
+    }
+    const video = await Video.create({ title: title.trim(), description: description.trim(), videoFile: videoUrl, thumbnail: thumbnailUrl, duration: Math.max(Number(duration) || 0, 0), owner: req.user._id })
     return res.status(201).json(new ApiResponse(201, await video.populate("owner", "fullName username avatar"), "Video published successfully"))
+})
+
+const createVideoUploadSignature = asyncHandler(async (req, res) => {
+    const { CLOUDINARY_CLOUD_NAME: cloudName, CLOUDINARY_API_KEY: apiKey, CLOUDINARY_API_SECRET: apiSecret } = process.env
+    if (!cloudName || !apiKey || !apiSecret) throw new ApiError(503, "Media uploads are not configured")
+
+    const timestamp = Math.floor(Date.now() / 1000)
+    const createSignature = (folder) => {
+        const params = { timestamp, folder }
+        return { ...params, signature: cloudinary.utils.api_sign_request(params, apiSecret) }
+    }
+
+    return res.status(200).json(new ApiResponse(200, {
+        cloudName,
+        apiKey,
+        video: createSignature(`streamly/${req.user._id}/videos`),
+        thumbnail: createSignature(`streamly/${req.user._id}/thumbnails`),
+    }, "Upload authorization created"))
 })
 
 const getVideoById = asyncHandler(async (req, res) => {
@@ -133,6 +159,7 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
 export {
     getAllVideos,
     publishAVideo,
+    createVideoUploadSignature,
     getVideoById,
     updateVideo,
     deleteVideo,

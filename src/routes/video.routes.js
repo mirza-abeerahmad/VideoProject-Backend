@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
     deleteVideo,
+    createVideoUploadSignature,
     getAllVideos,
     getVideoById,
     publishAVideo,
@@ -17,18 +18,10 @@ router
     .post(
         verifyJWT,
         authorizeRoles("creator", "admin"),
-        upload.fields([
-            {
-                name: "videoFile",
-                maxCount: 1,
-            },
-            {
-                name: "thumbnail",
-                maxCount: 1,
-            },
-        ]),
         publishAVideo
     );
+
+router.post("/upload-signature", verifyJWT, authorizeRoles("creator", "admin"), createVideoUploadSignature);
 
 router
     .route("/:videoId")
