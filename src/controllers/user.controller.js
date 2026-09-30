@@ -7,9 +7,8 @@ import jwt from "jsonwebtoken"
 import mongoose from "mongoose";
 
 
-const generateAccessAndRefereshTokens = async(userId) =>{
+const generateAccessAndRefereshTokens = async(user) =>{
     try {
-        const user = await User.findById(userId)
         const accessToken = user.generateAccessToken()
         const refreshToken = user.generateRefreshToken()
 
@@ -84,13 +83,9 @@ const registerUser = asyncHandler( async (req, res) => {
         username: username.toLowerCase()
     })
 
-    const createdUser = await User.findById(user._id).select(
-        "-password -refreshToken"
-    )
-
-    if (!createdUser) {
-        throw new ApiError(500, "Something went wrong while registering the user")
-    }
+    const createdUser = user.toObject()
+    delete createdUser.password
+    delete createdUser.refreshToken
 
     return res.status(201)
     .json(new ApiResponse(201, { user: createdUser }, "User registered successfully"))
@@ -106,8 +101,6 @@ const loginUser = asyncHandler(async (req, res) =>{
     //send cookie
 
     const {email, username, password} = req.body
-    console.log(email);
-
     if (!username && !email) {
         throw new ApiError(400, "username or email is required")
     }
@@ -132,9 +125,10 @@ const loginUser = asyncHandler(async (req, res) =>{
     throw new ApiError(401, "Invalid user credentials")
     }
 
-   const {accessToken, refreshToken} = await generateAccessAndRefereshTokens(user._id)
-
-    const loggedInUser = await User.findById(user._id).select("-password -refreshToken")
+    const {accessToken, refreshToken} = await generateAccessAndRefereshTokens(user)
+    const loggedInUser = user.toObject()
+    delete loggedInUser.password
+    delete loggedInUser.refreshToken
 
     const options = {
         httpOnly: true,
