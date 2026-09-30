@@ -92,17 +92,8 @@ const registerUser = asyncHandler( async (req, res) => {
         throw new ApiError(500, "Something went wrong while registering the user")
     }
 
-    const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(user._id)
-    const options = {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
-    }
-
     return res.status(201)
-    .cookie("accessToken", accessToken, options)
-    .cookie("refreshToken", refreshToken, options)
-    .json(new ApiResponse(201, { user: createdUser, accessToken, refreshToken }, "User registered successfully"))
+    .json(new ApiResponse(201, { user: createdUser }, "User registered successfully"))
 
 } )
 
